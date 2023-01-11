@@ -50,7 +50,8 @@ CATEGORY_MAPPING = {
     'Hotel': 'Hotel',
     'Income': 'Income',
     'Interest Income': 'Income',
-    'Internet': 'Bills & Utilities',
+    # 'Internet': 'Bills & Utilities',
+    'Internet': 'Internet',
     'Investment Transfer': 'Investments',
     'Investments': 'Investments',
     'Late Fee': 'Fees & Charges',
@@ -70,10 +71,13 @@ CATEGORY_MAPPING = {
     'Service Fee': 'Fees & Charges',
     'Shopping': 'Shopping',
     'State Tax': 'Taxes',
-    'Television': 'Bills & Utilities',
+    # 'Television': 'Bills & Utilities',
+    'Television': 'Television',
     'Trade Commissions': 'Investments',
     'Transfer': 'Transfer',
-    'Travel': 'Travel',
+    # TODO FIX TRAVEL IN MINT TO PUBLIC TRANSPORTATION (Peter pan bus lines, AMTRAK)
+    #'Travel': 'Travel',
+    'Travel': 'Public Transportation',
     # 'Utilities': 'Bills & Utilities',
     'Utilities': 'Utilities',
     'Vacation': 'Travel',
@@ -182,6 +186,8 @@ class CreditCard(ABC):
             'Ride Share': 1,
             'Public Transportation': 1,
             'Utilities': 1,
+            'Internet': 1,
+            'Television': 1,
         }
 
     @abstractmethod

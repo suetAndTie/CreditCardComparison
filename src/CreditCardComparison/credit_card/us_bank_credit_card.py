@@ -37,7 +37,7 @@ class CashPlusCreditCard(CreditCard):
     def get_benefit_dict(self):
         return {
             'Sign Up Benefit': SignUpBenefit(
-                self.start_date, points=20000, purchase_amount=1000, days=90
+                self.start_date, points=20000, purchase_amount=1000, days=120
             )
         }
 
