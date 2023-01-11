@@ -2,18 +2,25 @@ from credit_card import CreditCard
 
 
 class BiltCreditCard(CreditCard):
-    category_point_dict = dict(
-        ((k, v) for k, v in CreditCard.category_point_dict.items()),
-        **{
-            'Mortgage & Rent': 1,
-            'Food & Dining': 3,
-            'Hotel': 2,
-            'Air Travel': 2,
-        }
-    )
-    category_point_limit_dict = dict(
-        ((k, v) for k, v in CreditCard.category_point_limit_dict.items()),
-        **{
+    def get_annual_fee(self):
+        return 0
+
+    def get_benefit_dict(self):
+        return {}
+
+    def get_point_multiplier_dict(self):
+        point_multiplier_dict = super().get_point_multiplier_dict()
+        point_multiplier_dict.update(
+            {
+                'Mortgage & Rent': 1,
+                'Food & Dining': 3,
+                'Hotel': 2,
+                'Air Travel': 2,
+            }
+        )
+        return point_multiplier_dict
+
+    def get_point_limit_dict(self):
+        return {
             'Mortgage & Rent': 50000,
         }
-    )

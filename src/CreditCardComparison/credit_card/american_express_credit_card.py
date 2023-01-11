@@ -5,27 +5,20 @@ from CreditCardComparison.benefit import SignUpBenefit, MonthlyCreditBenefit
 
 
 class AmericanExpressGoldCreditCard(CreditCard):
-    annual_fee = 250
-    category_point_dict = dict(
-        ((k, v) for k, v in CreditCard.category_point_dict.items()),
-        **{
-            'Food & Dining': 4,
-            'Groceries': 4,
-            'Air Travel': 3,
-        }
-    )
-    benefit_class_dict = dict(
-        ((k, v) for k, v in CreditCard.benefit_class_dict.items()),
-        **{
-            'Sign Up Benefit': partial(
-                SignUpBenefit, points=90000, purchase_amount=4000, months=6
+    def get_annual_fee(self):
+        return 250
+
+    def get_benefit_dict(self):
+        return {
+            'Sign Up Benefit': SignUpBenefit(
+                self.start_date, points=90000, purchase_amount=4000, months=6
             ),
-            'Uber Cash Monthly Benefit': partial(
-                MonthlyCreditBenefit,
+            'Uber Cash Monthly Benefit': MonthlyCreditBenefit(
+                self.start_date,
                 monthly_points=1000,
             ),
-            'Dining Credit Monthly Benefit': partial(
-                MonthlyCreditBenefit,
+            'Dining Credit Monthly Benefit': MonthlyCreditBenefit(
+                self.start_date,
                 monthly_points=1000,
                 company_list=[
                     'Grubhub',
@@ -37,4 +30,17 @@ class AmericanExpressGoldCreditCard(CreditCard):
                 ],
             ),
         }
-    )
+
+    def get_point_multiplier_dict(self):
+        point_multiplier_dict = super().get_point_multiplier_dict()
+        point_multiplier_dict.update(
+            {
+                'Food & Dining': 4,
+                'Groceries': 4,
+                'Air Travel': 3,
+            }
+        )
+        return point_multiplier_dict
+
+    def get_point_limit_dict(self):
+        return {}

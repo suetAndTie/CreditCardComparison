@@ -2,7 +2,12 @@ import os
 import argparse
 import pandas as pd
 
-from credit_card import AltitudeGoCreditCard, BiltCreditCard, AmericanExpressGoldCreditCard
+from credit_card import (
+    AltitudeGoCreditCard,
+    BiltCreditCard,
+    CashPlusCreditCard,
+)
+from spender import Spender
 
 
 def main(input_fn, output_fn):
@@ -16,28 +21,23 @@ def main(input_fn, output_fn):
         lambda row: row['Amount'] * -1 if row['Transaction Type'] == 'credit' else row['Amount'],
         axis=1,
     )
+    # Save out summary
     transactions = df.groupby('Category')['Amount'].sum()
     transactions.to_csv(output_fn)
 
+    # only get valid purchases from credit card
     purchases = df[df['Transaction Type'] == 'debit'].to_dict('records')
 
-    results_dict = {}
-    for card in [
-        AltitudeGoCreditCard('1/1/2022'),
+    credit_card_list = [
+        AltitudeGoCreditCard('1/1/2020'),
         BiltCreditCard('1/1/2022'),
-        AmericanExpressGoldCreditCard('1/1/2022'),
-    ]:
-        for purchase in purchases:
-            card(purchase)
-
-        results = card.get_results()
-        print(results)
-
-    total = 0
-    for k, v in results_dict.items():
-        print(k, v)
-        total += v
-    print('total', total)
+        CashPlusCreditCard('1/1/2022'),
+    ]
+    spender = Spender(credit_card_list)
+    spender(purchases)
+    results = spender.get_results()
+    print(results)
+    print('total', sum(results.values()))
 
 
 if __name__ == '__main__':

@@ -1,4 +1,4 @@
 from .credit_card import CreditCard
-from .altitude_go_credit_card import AltitudeGoCreditCard
+from .us_bank_credit_card import AltitudeGoCreditCard, CashPlusCreditCard
 from .american_express_credit_card import AmericanExpressGoldCreditCard
 from .bilt_credit_card import BiltCreditCard

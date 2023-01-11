@@ -1,4 +1,5 @@
-from abc import ABC
+from abc import ABC, abstractmethod
+import math
 
 from CreditCardComparison.utils import string_to_datetime
 
@@ -60,7 +61,8 @@ CATEGORY_MAPPING = {
     'Movies & DVDs': 'Entertainment',
     'Parking': 'Auto & Transport',
     'Pharmacy': 'Health & Fitness',
-    'Public Transportation': 'Auto & Transport',
+    # 'Public Transportation': 'Auto & Transport',
+    'Public Transportation': 'Public Transportation',
     'Reimbursement': 'Income',
     'Restaurants': 'Food & Dining',
     # 'Ride Share': 'Auto & Transport',
@@ -72,84 +74,65 @@ CATEGORY_MAPPING = {
     'Trade Commissions': 'Investments',
     'Transfer': 'Transfer',
     'Travel': 'Travel',
-    'Utilities': 'Bills & Utilities',
+    # 'Utilities': 'Bills & Utilities',
+    'Utilities': 'Utilities',
     'Vacation': 'Travel',
     'Venmo': 'Uncategorized',
 }
 
 
 class CreditCard(ABC):
-    category_point_dict = {
-        'Health & Fitness': 1,
-        'Gifts & Donations': 1,
-        'Taxes': 0,
-        'Investments': 0,
-        'Income': 0,
-        'Financial': 0,
-        'Food & Dining': 1,
-        'Bills & Utilities': 1,
-        'Uncategorized': 0,
-        'Fees & Charges': 0,
-        'Shopping': 1,
-        'Auto & Transport': 1,
-        'Transfer': 0,
-        'Entertainment': 1,
-        'Misc Expenses': 0,
-        'Groceries': 1,
-        'Business Services': 1,
-        'Home': 0,
-        'Travel': 1,
-        'Personal Care': 1,
-        'Mortgage & Rent': 0,
-        'Gas & Fuel': 1,
-        'Hotel': 1,
-        'Air Travel': 1,
-        'Ride Share': 1,
-    }
-    category_point_limit_dict = {}
-    benefit_class_dict = {}
-    annual_fee = 0
-
     def __init__(self, start_date):
         if isinstance(start_date, str):
             start_date = string_to_datetime(start_date)
         self.start_date = start_date
+        self.current_date = start_date
+        self.annual_fee = self.get_annual_fee()
+        self.benefit_dict = self.get_benefit_dict()
+        self.point_multiplier_dict = self.get_point_multiplier_dict()
+        self.point_limit_dict = self.get_point_limit_dict()
+        self.combined_point_limit_dict = self.get_combined_point_limit_dict()
         self.point_dict = {}
-        self.benefit_dict = {
-            benefit_name: benefit_class(start_date=start_date)
-            for benefit_name, benefit_class in self.benefit_class_dict.items()
-        }
 
-    def calculate_remaining_category_points(self, category):
+    def calculate_remaining_category_points(self, mapped_category):
+        limit = float('inf')
+        for k, v in self.combined_point_limit_dict.items():
+            if mapped_category in k:
+                limit = min(limit, v)
+
+        limit = min(limit, self.point_limit_dict.get(mapped_category, float('inf')))
         return max(
             0,
-            self.category_point_limit_dict.get(category, float('inf'))
-            - self.point_dict.get(category, 0),
+            limit - self.point_dict.get(mapped_category, 0),
         )
 
     def calculate_purchase_points(self, purchase):
-        category = CATEGORY_MAPPING[purchase['Category']]
+        mapped_category = CATEGORY_MAPPING[purchase['Category']]
         return min(
-            self.category_point_dict[category] * int(purchase['Amount']),
-            self.calculate_remaining_category_points(category),
+            self.point_multiplier_dict[mapped_category] * int(purchase['Amount']),
+            self.calculate_remaining_category_points(mapped_category),
         )
 
     def get_results(self):
         return {
-            'annual_fee': -self.annual_fee,
+            'Annual Fee': -self.annual_fee
+            * math.ceil((self.current_date - self.start_date).days / 365),
             **{k: v / 100 for k, v in self.point_dict.items()},
         }
 
     def __call__(self, purchase):
-        category = CATEGORY_MAPPING[purchase['Category']]
+        mapped_category = CATEGORY_MAPPING[purchase['Category']]
 
-        # not a valid category
-        if self.category_point_dict.get(category, 0) == 0:
+        if self.point_multiplier_dict.get(mapped_category, 0) == 0:
             return 0
+
+        date = string_to_datetime(purchase['Date'])
+        if date > self.current_date:
+            self.current_date = date
 
         # calculate points
         points = self.calculate_purchase_points(purchase)
-        self.point_dict[category] = self.point_dict.get(category, 0) + points
+        self.point_dict[mapped_category] = self.point_dict.get(mapped_category, 0) + points
 
         # calculate benefits
         for benefit_name, benefit in self.benefit_dict.items():
@@ -158,3 +141,54 @@ class CreditCard(ABC):
             points += benefit_points
 
         return points
+
+    @abstractmethod
+    def get_annual_fee(self):
+        # returns an annual fee in dollars
+        return 0
+
+    @abstractmethod
+    def get_benefit_dict(self):
+        # returns a dict of str -> benefit
+        return {}
+
+    def get_point_multiplier_dict(self):
+        # returns the multiplier
+        return {
+            'Health & Fitness': 1,
+            'Gifts & Donations': 1,
+            'Taxes': 0,
+            'Investments': 0,
+            'Income': 0,
+            'Financial': 0,
+            'Food & Dining': 1,
+            'Bills & Utilities': 1,
+            'Uncategorized': 0,
+            'Fees & Charges': 0,
+            'Shopping': 1,
+            'Auto & Transport': 1,
+            'Transfer': 0,
+            'Entertainment': 1,
+            'Misc Expenses': 0,
+            'Groceries': 1,
+            'Business Services': 1,
+            'Home': 0,
+            'Travel': 1,
+            'Personal Care': 1,
+            'Mortgage & Rent': 0,
+            'Gas & Fuel': 1,
+            'Hotel': 1,
+            'Air Travel': 1,
+            'Ride Share': 1,
+            'Public Transportation': 1,
+            'Utilities': 1,
+        }
+
+    @abstractmethod
+    def get_point_limit_dict(self):
+        # return dict of mapped_category (str) to point limit (int)
+        return {}
+
+    def get_combined_point_limit_dict(self):
+        # return dict of list of mapped_category (list[str]) to point limit (int)
+        return {}
